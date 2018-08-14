@@ -43,7 +43,7 @@
     <Compile Include="Viewport.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="Viewport.xaml">
+    <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
