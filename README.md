@@ -18,8 +18,8 @@ Include in App.xaml
 
 ### Usage
 
-     <controls:Viewport MinZoom="1" MaxZoom="50" ZoomSpeed="1.1">
+    <controls:Viewport MinZoom="1" MaxZoom="50" ZoomSpeed="1.1">
 
-         <Image Source="{Binding}" />
+        <Image Source="{Binding}" />
 
-     </controls:Viewport>
+    </controls:Viewport>
