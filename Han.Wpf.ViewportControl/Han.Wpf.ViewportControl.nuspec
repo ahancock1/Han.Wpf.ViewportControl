@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>Han.Wpf.ViewportControl</id>
+    <version>1.0.0</version>
+    <title>Wpf Viewport Control</title>
+    <authors>Adam Hancock</authors>
+    <owners>Adam Hancock</owners>
+    <licenseUrl>https://github.com/ahancock1/Han.Wpf.ViewportControl</licenseUrl>
+    <projectUrl>https://github.com/ahancock1/Han.Wpf.ViewportControl</projectUrl>
+    <iconUrl>https://github.com/ahancock1/Han.Wpf.ViewportControl/blob/master/AH.png?raw=true</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A Wpf Viewport Control that provides pan and zoom functionality.</description>
+    <copyright>Copyright 2018 Adam Hancock</copyright>
+  </metadata>
+</package>
