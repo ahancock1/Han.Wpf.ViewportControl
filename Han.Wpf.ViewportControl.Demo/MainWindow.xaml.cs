@@ -1,8 +1,8 @@
 ﻿// -----------------------------------------------------------------------
 //   Copyright (C) 2018 Adam Hancock
 //    
-//   MainWindow.xaml.cs can not be copied and/or distributed without the express
-//   permission of Adam Hancock
+//   MainWindow.xaml.cs Licensed under the MIT License. See LICENSE file in
+//   the project root for full license information.  
 // -----------------------------------------------------------------------
 
 namespace Han.Wpf.ViewportControl.Demo

@@ -1,7 +1,8 @@
 ﻿// -----------------------------------------------------------------------
-//  <copyright file="Viewport.cs" company="Solentim">
-//      Copyright (c) Solentim 2017. All rights reserved.
-//  </copyright>
+//   Copyright (C) 2018 Adam Hancock
+//    
+//   Viewport.cs Licensed under the MIT License. See LICENSE file in
+//   the project root for full license information.  
 // -----------------------------------------------------------------------
 
 namespace Han.Wpf.ViewportControl
@@ -14,11 +15,6 @@ namespace Han.Wpf.ViewportControl
 
     public class Viewport : ContentControl
     {
-        private bool _capture;
-        private FrameworkElement _content;
-        private Matrix _matrix;
-        private Point _origin;
-
         public static readonly DependencyProperty MaxZoomProperty =
             DependencyProperty.Register(
                 nameof(MaxZoom),
@@ -75,6 +71,19 @@ namespace Han.Wpf.ViewportControl
                 typeof(Viewport),
                 new FrameworkPropertyMetadata(default(Rect), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
 
+        private bool _capture;
+        private FrameworkElement _content;
+        private Matrix _matrix;
+        private Point _origin;
+
+        public Viewport()
+        {
+            DefaultStyleKey = typeof(Viewport);
+
+            Loaded += OnLoaded;
+            Unloaded += OnUnloaded;
+        }
+
         public Rect Bounds
         {
             get => (Rect) GetValue(BoundsProperty);
@@ -123,14 +132,6 @@ namespace Han.Wpf.ViewportControl
             set => SetValue(ZoomYProperty, value);
         }
 
-        public Viewport()
-        {
-            DefaultStyleKey = typeof(Viewport);
-
-            Loaded += OnLoaded;
-            Unloaded += OnUnloaded;
-        }
-
         private void Arrange(Size desired, Size render)
         {
             _matrix = Matrix.Identity;
@@ -145,8 +146,8 @@ namespace Han.Wpf.ViewportControl
             if (render.Width > desired.Width &&
                 render.Height > desired.Height)
             {
-                cx = (desired.Width - (render.Width * zoom)) / 2.0;
-                cy = (desired.Height - (render.Height * zoom)) / 2.0;
+                cx = (desired.Width - render.Width * zoom) / 2.0;
+                cy = (desired.Height - render.Height * zoom) / 2.0;
 
                 _matrix = new Matrix(zoom, 0d, 0d, zoom, cx, cy);
             }
