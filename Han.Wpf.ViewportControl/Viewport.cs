@@ -1,9 +1,3 @@
-﻿// -----------------------------------------------------------------------
-//  <copyright file="Viewport.cs" company="Solentim">
-//      Copyright (c) Solentim 2017. All rights reserved.
-//  </copyright>
-// -----------------------------------------------------------------------
-
 namespace Han.Wpf.ViewportControl
 {
     using System;
