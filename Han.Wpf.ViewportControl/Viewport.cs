@@ -364,7 +364,7 @@ namespace Han.Wpf.ViewportControl
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            Detach();
+            ChangeContent(null, true);
 
             SizeChanged -= OnSizeChanged;
             Unloaded -= OnUnloaded;
