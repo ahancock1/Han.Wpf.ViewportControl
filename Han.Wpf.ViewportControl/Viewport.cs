@@ -174,7 +174,7 @@ namespace Han.Wpf.ViewportControl
             {
                 if (_content != null)
                 {
-                    Detatch();
+                    Detach();
                     _content = null;
                 }
 
@@ -214,7 +214,7 @@ namespace Han.Wpf.ViewportControl
             _matrix = new Matrix(_matrix.M11, 0d, 0d, _matrix.M22, x, y);
         }
 
-        private void Detatch()
+        private void Detach()
         {
             _content.MouseMove -= OnMouseMove;
             _content.MouseLeave -= OnMouseLeave;
@@ -364,7 +364,7 @@ namespace Han.Wpf.ViewportControl
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            Detatch();
+            Detach();
 
             SizeChanged -= OnSizeChanged;
             Unloaded -= OnUnloaded;
