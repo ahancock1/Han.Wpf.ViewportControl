@@ -168,9 +168,9 @@ namespace Han.Wpf.ViewportControl
             content.MouseRightButtonDown += OnMouseRightButtonDown;
         }
 
-        private void ChangeContent(FrameworkElement content)
+        private void ChangeContent(FrameworkElement content, bool force)
         {
-            if (content != null && !Equals(content, _content))
+            if (content != null && (force || !Equals(content, _content)))
             {
                 if (_content != null)
                 {
@@ -261,7 +261,7 @@ namespace Han.Wpf.ViewportControl
 
             if (Content is FrameworkElement element)
             {
-                ChangeContent(element);
+                ChangeContent(element, false);
             }
         }
 
@@ -269,7 +269,7 @@ namespace Han.Wpf.ViewportControl
         {
             if (Content is FrameworkElement element)
             {
-                ChangeContent(element);
+                ChangeContent(element, true);
             }
 
             SizeChanged += OnSizeChanged;
@@ -364,6 +364,7 @@ namespace Han.Wpf.ViewportControl
 
             SizeChanged -= OnSizeChanged;
             Unloaded -= OnUnloaded;
+            Loaded += OnLoaded;
         }
 
         private void Pressed(Point position)
@@ -385,7 +386,7 @@ namespace Han.Wpf.ViewportControl
             }
         }
 
-        private void Reset()
+        public void Reset()
         {
             _matrix = Matrix.Identity;
 
