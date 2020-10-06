@@ -170,15 +170,19 @@ namespace Han.Wpf.ViewportControl
 
         private void ChangeContent(FrameworkElement content, bool force)
         {
-            if (content != null && (force || !Equals(content, _content)))
+            if (force || !Equals(content, _content))
             {
                 if (_content != null)
                 {
                     Detatch();
+                    _content = null;
                 }
 
-                Attach(content);
-                _content = content;
+                if (content != null)
+                {
+                    Attach(content);
+                    _content = content;
+                }
             }
         }
 
