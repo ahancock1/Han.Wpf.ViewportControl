@@ -74,7 +74,7 @@ namespace Han.Wpf.ViewportControl
         private bool _capture;
         private FrameworkElement _content;
         private Matrix _matrix;
-        private Point _origin;
+        private Point _lastMousePosition; // needed for translate delta calculation
 
         public Viewport()
         {
@@ -157,17 +157,6 @@ namespace Han.Wpf.ViewportControl
             }
         }
 
-        private void Attach(FrameworkElement content)
-        {
-            content.MouseMove += OnMouseMove;
-            content.MouseLeave += OnMouseLeave;
-            content.MouseWheel += OnMouseWheel;
-            content.MouseLeftButtonDown += OnMouseLeftButtonDown;
-            content.MouseLeftButtonUp += OnMouseLeftButtonUp;
-            content.SizeChanged += OnSizeChanged;
-            content.MouseRightButtonDown += OnMouseRightButtonDown;
-        }
-
         private void ChangeContent(FrameworkElement content, bool force)
         {
             if (force || !Equals(content, _content))
@@ -185,6 +174,33 @@ namespace Han.Wpf.ViewportControl
                 }
             }
         }
+
+        private void Attach(FrameworkElement content)
+        {
+            content.MouseMove += OnMouseMove;
+            content.MouseLeave += OnMouseLeave;
+            content.MouseWheel += OnMouseWheel;
+            content.MouseLeftButtonDown += OnMouseLeftButtonDown;
+            content.MouseLeftButtonUp += OnMouseLeftButtonUp;
+            content.MouseRightButtonDown += OnMouseRightButtonDown;
+            content.SizeChanged += OnSizeChanged;
+            content.IsManipulationEnabled = true;
+            content.ManipulationDelta += OnManipulationDelta;
+        }
+
+        private void Detach()
+        {
+            _content.MouseMove -= OnMouseMove;
+            _content.MouseLeave -= OnMouseLeave;
+            _content.MouseWheel -= OnMouseWheel;
+            _content.MouseLeftButtonDown -= OnMouseLeftButtonDown;
+            _content.MouseLeftButtonUp -= OnMouseLeftButtonUp;
+            _content.MouseRightButtonDown -= OnMouseRightButtonDown;
+            _content.SizeChanged -= OnSizeChanged;
+            _content.IsManipulationEnabled = false;
+            _content.ManipulationDelta -= OnManipulationDelta;
+        }
+
 
         private double Constrain(double value, double min, double max)
         {
@@ -212,17 +228,6 @@ namespace Han.Wpf.ViewportControl
             var y = Constrain(_matrix.OffsetY, _content.ActualHeight - _content.ActualHeight * _matrix.M22, 0);
 
             _matrix = new Matrix(_matrix.M11, 0d, 0d, _matrix.M22, x, y);
-        }
-
-        private void Detach()
-        {
-            _content.MouseMove -= OnMouseMove;
-            _content.MouseLeave -= OnMouseLeave;
-            _content.MouseWheel -= OnMouseWheel;
-            _content.MouseLeftButtonDown -= OnMouseLeftButtonDown;
-            _content.MouseLeftButtonUp -= OnMouseLeftButtonUp;
-            _content.SizeChanged -= OnSizeChanged;
-            _content.MouseRightButtonDown -= OnMouseRightButtonDown;
         }
 
         private void Invalidate()
@@ -280,9 +285,19 @@ namespace Han.Wpf.ViewportControl
             Loaded -= OnLoaded;
         }
 
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            ChangeContent(null, true);
+
+            SizeChanged -= OnSizeChanged;
+            Unloaded -= OnUnloaded;
+            Loaded += OnLoaded;
+        }
+
+
         private void OnMouseLeave(object sender, MouseEventArgs e)
         {
-            if (_capture)
+            if (_capture && !IsTouchInducedEvent(e))
             {
                 Released();
             }
@@ -290,7 +305,7 @@ namespace Han.Wpf.ViewportControl
 
         private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (IsEnabled && !_capture)
+            if (IsEnabled && !_capture && !IsTouchInducedEvent(e))
             {
                 Pressed(e.GetPosition(this));
             }
@@ -298,7 +313,7 @@ namespace Han.Wpf.ViewportControl
 
         private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (IsEnabled && _capture)
+            if (IsEnabled && _capture && !IsTouchInducedEvent(e))
             {
                 Released();
             }
@@ -306,22 +321,21 @@ namespace Han.Wpf.ViewportControl
 
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
-            if (IsEnabled && _capture)
+            if (IsEnabled && _capture && !IsTouchInducedEvent(e))
             {
                 var position = e.GetPosition(this);
+                var delta = position - _lastMousePosition;
 
-                var point = new Point
-                {
-                    X = position.X - _origin.X,
-                    Y = position.Y - _origin.Y
-                };
+                _lastMousePosition = position;
+                ApplyTranslate(delta);
+            }
+        }
 
-                var delta = point;
-                _origin = position;
-
-                _matrix.Translate(delta.X, delta.Y);
-
-                Invalidate();
+        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (IsEnabled && e.StylusDevice == null && !IsTouchInducedEvent(e))
+            {
+                ApplyScale(e.GetPosition(_content), e.Delta > 0 ? ZoomSpeed : 1 / ZoomSpeed);
             }
         }
 
@@ -333,23 +347,42 @@ namespace Han.Wpf.ViewportControl
             }
         }
 
-        private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+        protected override void OnManipulationStarting(ManipulationStartingEventArgs e)
+        {
+            e.ManipulationContainer = this;
+
+            e.Handled = true;
+        }
+
+        private void OnManipulationDelta(object sender, ManipulationDeltaEventArgs e)
         {
             if (IsEnabled)
             {
-                var scale = e.Delta > 0 ? ZoomSpeed : 1 / ZoomSpeed;
-                var position = e.GetPosition(_content);
-
-                var x = Constrain(scale, MinZoom / _matrix.M11, MaxZoom / _matrix.M11);
-                var y = Constrain(scale, MinZoom / _matrix.M22, MaxZoom / _matrix.M22);
-
-                _matrix.ScaleAtPrepend(x, y, position.X, position.Y);
-
-                ZoomX = _matrix.M11;
-                ZoomY = _matrix.M22;
-
-                Invalidate();
+                ApplyTranslate(e.DeltaManipulation.Translation);
+                ApplyScale(this.TranslatePoint(e.ManipulationOrigin, (UIElement)Content), e.DeltaManipulation.Scale.X);
             }
+
+            e.Handled = true;
+        }
+
+        private void ApplyTranslate(Vector deltaInViewport)
+        {
+            _matrix.Translate(deltaInViewport.X, deltaInViewport.Y);
+
+            Invalidate();
+        }
+
+        private void ApplyScale(Point positionInContent, double scale)
+        {
+            var x = Constrain(scale, MinZoom / _matrix.M11, MaxZoom / _matrix.M11);
+            var y = Constrain(scale, MinZoom / _matrix.M22, MaxZoom / _matrix.M22);
+
+            _matrix.ScaleAtPrepend(x, y, positionInContent.X, positionInContent.Y);
+
+            ZoomX = _matrix.M11;
+            ZoomY = _matrix.M22;
+
+            Invalidate();
         }
 
         private void OnSizeChanged(object sender, SizeChangedEventArgs e)
@@ -362,21 +395,13 @@ namespace Han.Wpf.ViewportControl
             }
         }
 
-        private void OnUnloaded(object sender, RoutedEventArgs e)
-        {
-            ChangeContent(null, true);
-
-            SizeChanged -= OnSizeChanged;
-            Unloaded -= OnUnloaded;
-            Loaded += OnLoaded;
-        }
 
         private void Pressed(Point position)
         {
             if (IsEnabled)
             {
                 _content.Cursor = Cursors.Hand;
-                _origin = position;
+                _lastMousePosition = position;
                 _capture = true;
             }
         }
@@ -400,6 +425,15 @@ namespace Han.Wpf.ViewportControl
             }
 
             Invalidate();
+        }
+
+        private static bool IsTouchInducedEvent(MouseEventArgs e)
+        {
+            // Ideas from:
+            // - https://social.msdn.microsoft.com/Forums/en-US/9b05e550-19c0-46a2-b19c-40f40c8bf0ec/prevent-a-wpf-application-to-interpret-touch-events-as-mouse-events?forum=wpf
+            // - https://stackoverflow.com/questions/29857587/detect-if-wm-mousemove-is-caused-by-touch-pen
+
+            return e.StylusDevice != null;
         }
     }
 }
