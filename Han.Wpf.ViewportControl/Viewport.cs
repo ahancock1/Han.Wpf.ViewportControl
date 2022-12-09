@@ -168,17 +168,21 @@ namespace Han.Wpf.ViewportControl
             content.MouseRightButtonDown += OnMouseRightButtonDown;
         }
 
-        private void ChangeContent(FrameworkElement content)
+        private void ChangeContent(FrameworkElement content, bool force)
         {
-            if (content != null && !Equals(content, _content))
+            if (force || !Equals(content, _content))
             {
                 if (_content != null)
                 {
-                    Detatch();
+                    Detach();
+                    _content = null;
                 }
 
-                Attach(content);
-                _content = content;
+                if (content != null)
+                {
+                    Attach(content);
+                    _content = content;
+                }
             }
         }
 
@@ -210,7 +214,7 @@ namespace Han.Wpf.ViewportControl
             _matrix = new Matrix(_matrix.M11, 0d, 0d, _matrix.M22, x, y);
         }
 
-        private void Detatch()
+        private void Detach()
         {
             _content.MouseMove -= OnMouseMove;
             _content.MouseLeave -= OnMouseLeave;
@@ -261,7 +265,7 @@ namespace Han.Wpf.ViewportControl
 
             if (Content is FrameworkElement element)
             {
-                ChangeContent(element);
+                ChangeContent(element, false);
             }
         }
 
@@ -269,7 +273,7 @@ namespace Han.Wpf.ViewportControl
         {
             if (Content is FrameworkElement element)
             {
-                ChangeContent(element);
+                ChangeContent(element, true);
             }
 
             SizeChanged += OnSizeChanged;
@@ -360,10 +364,11 @@ namespace Han.Wpf.ViewportControl
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            Detatch();
+            ChangeContent(null, true);
 
             SizeChanged -= OnSizeChanged;
             Unloaded -= OnUnloaded;
+            Loaded += OnLoaded;
         }
 
         private void Pressed(Point position)
@@ -385,7 +390,7 @@ namespace Han.Wpf.ViewportControl
             }
         }
 
-        private void Reset()
+        public void Reset()
         {
             _matrix = Matrix.Identity;
 
